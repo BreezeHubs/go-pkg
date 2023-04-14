@@ -3,16 +3,14 @@ package schedule
 import (
 	"context"
 	"errors"
-	"github.com/BreezeHubs/bekit/sys"
+	"go-pkg/syspkg"
 	"log"
 	"sync"
-	"time"
 )
 
 type schedule struct {
 	tasks map[string]func(context.Context) error
 	ctx   context.Context
-	//cancel *context.CancelFunc
 }
 
 func NewSchedule(ctx context.Context) *schedule {
@@ -21,7 +19,6 @@ func NewSchedule(ctx context.Context) *schedule {
 	}
 	ctx, _ = context.WithCancel(ctx)
 	s.ctx = ctx
-	//s.cancel = &cancel
 	return s
 }
 
@@ -36,15 +33,15 @@ func (s *schedule) RunAndGracefullyExit() error {
 	defer cancel()
 
 	//创建退出信号监听
-	signal := sys.NewListenExitSignal()
+	signal := syspkg.NewListenExitSignal()
 
 	//监听退出信号
 	go func() {
-		for !signal.IsExit() {
-			time.Sleep(10 * time.Millisecond)
+		select {
+		case <-signal.Signal():
+			errChan <- errors.New("listen exit signal: out")
+			cancel()
 		}
-		errChan <- errors.New("listen exit signal: out")
-		cancel()
 	}()
 
 	// 编排开始

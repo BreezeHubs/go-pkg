@@ -39,6 +39,6 @@ func (e *eSignal) Wait() {
 	}
 }
 
-func (e *eSignal) Signal() chan os.Signal {
+func (e *eSignal) Signal() <-chan os.Signal {
 	return e.signal
 }

@@ -3,7 +3,7 @@ package schedule
 import (
 	"context"
 	"fmt"
-	"open-devops/pkg/logpkg"
+	"go-pkg/logpkg"
 	"sync"
 )
 
