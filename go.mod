@@ -1,9 +1,8 @@
-module go-pkg
+module github.com/BreezeHubs/go-pkg
 
 go 1.20
 
 require (
-	github.com/BreezeHubs/bekit v0.0.0-20230403104242-204f5b6b2002
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/json-iterator/go v1.1.12

@@ -3,7 +3,7 @@ package schedule
 import (
 	"context"
 	"fmt"
-	"go-pkg/logpkg"
+	"github.com/BreezeHubs/go-pkg/logpkg"
 	"sync"
 )
 

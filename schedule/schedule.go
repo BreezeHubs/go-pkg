@@ -3,7 +3,7 @@ package schedule
 import (
 	"context"
 	"errors"
-	"go-pkg/syspkg"
+	"github.com/BreezeHubs/go-pkg/syspkg"
 	"log"
 	"sync"
 )
