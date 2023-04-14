@@ -30,7 +30,7 @@ func TickerTaskV1(ctx context.Context, taskFunc func(ctx context.Context) error,
 	return
 }
 
-func TickerTaskWithThrowError(ctx context.Context, taskFunc func(ctx context.Context) error, t time.Duration) error {
+func TickerTask(ctx context.Context, taskFunc func(ctx context.Context) error, t time.Duration) error {
 	if err := taskFunc(ctx); err != nil {
 		return err
 	}
@@ -42,23 +42,6 @@ func TickerTaskWithThrowError(ctx context.Context, taskFunc func(ctx context.Con
 		case <-time.After(t):
 			if err := taskFunc(ctx); err != nil {
 				return err
-			}
-		}
-	}
-}
-
-func TickerTaskWithPrintError(ctx context.Context, taskFunc func(ctx context.Context) error, errFunc func(err error), t time.Duration) error {
-	if err := taskFunc(ctx); err != nil {
-		errFunc(err)
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(t):
-			if err := taskFunc(ctx); err != nil {
-				errFunc(err)
 			}
 		}
 	}
