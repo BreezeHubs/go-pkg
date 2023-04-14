@@ -2,7 +2,6 @@ package filepkg
 
 import (
 	"fmt"
-	"github.com/toolkits/pkg/file"
 	"os"
 	"strings"
 	"unsafe"
@@ -23,7 +22,7 @@ func ReadBytes(filePath string) ([]byte, error) {
 		return nil, fmt.Errorf("%s not exists", filePath)
 	}
 
-	if !file.IsFile(filePath) {
+	if !IsFile(filePath) {
 		return nil, fmt.Errorf("%s not file", filePath)
 	}
 

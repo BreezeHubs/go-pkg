@@ -3,7 +3,7 @@ package cmdpkg
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"open-devops/pkg/filepkg"
+	"go-pkg/filepkg"
 	"strconv"
 	"strings"
 )
