@@ -1,6 +1,7 @@
 package cmdpkg
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"syscall"
@@ -15,6 +16,13 @@ func CmdOutput(name string, arg ...string) (string, error) {
 
 func CmdOutputWithCmd(execCmd *exec.Cmd, name string, arg ...string) *exec.Cmd {
 	cmd := exec.Command(name, arg...)
+	renderCmd(cmd, execCmd)
+
+	return cmd
+}
+
+func CmdOutputWithCtxAndCmd(ctx context.Context, execCmd *exec.Cmd, name string, arg ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, name, arg...)
 	renderCmd(cmd, execCmd)
 
 	return cmd
