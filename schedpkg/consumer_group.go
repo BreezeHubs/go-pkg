@@ -1,4 +1,4 @@
-package schedule
+package schedpkg
 
 // ConsumerGroup 定义消费者组
 type ConsumerGroup struct {

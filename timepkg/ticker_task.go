@@ -46,3 +46,32 @@ func TickerTask(ctx context.Context, taskFunc func(ctx context.Context) error, t
 		}
 	}
 }
+
+type tickerTaskChannel struct {
+	C chan error
+}
+
+func TickerTaskWithChannel(ctx context.Context, taskFunc func(ctx context.Context) error, t time.Duration) *tickerTaskChannel {
+	tc := tickerTaskChannel{
+		C: make(chan error, 1),
+	}
+
+	go func() {
+		if err := taskFunc(ctx); err != nil {
+			tc.C <- err
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				tc.C <- ctx.Err()
+			case <-time.After(t):
+				if err := taskFunc(ctx); err != nil {
+					tc.C <- err
+				}
+			}
+		}
+	}()
+
+	return &tc
+}
