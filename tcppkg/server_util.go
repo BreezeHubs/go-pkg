@@ -1,36 +1,38 @@
 package tcppkg
 
 import (
-	"log"
 	"net"
 	"time"
 )
 
-func (s *tcpServer) ipListConn(conn net.Conn, err error) {
-	if err == nil {
-		s.ipListLock.Lock()
-		defer s.ipListLock.Unlock()
+func (s *tcpServer) ipListConn(conn net.Conn) {
+	s.ipListLock.Lock()
+	defer s.ipListLock.Unlock()
 
-		_, ok := s.ipList[conn.RemoteAddr().String()]
-		if !ok {
-			s.ipList[conn.RemoteAddr().String()] = struct{}{}
-			log.Println("[IP:" + conn.RemoteAddr().String() + "] 已连接")
+	_, ok := s.ipList[conn.RemoteAddr().String()]
+	if !ok {
+		s.ipList[conn.RemoteAddr().String()] = struct{}{}
 
-			if s.hookHandle != nil {
-				if err = s.hookHandle(s.ctx, conn); err != nil {
-					return
-				} // 处理首次连接钩子
-			}
+		if s.hookHandle != nil {
+			s.hookHandle(s.ctx, conn) // 处理首次连接钩子
 		}
 	}
 }
 
 func (s *tcpServer) connHandle(conn net.Conn) {
-	defer conn.Close()
+	defer func() {
+		conn.Close()
+		s.ipListLock.Lock()
+		delete(s.ipList, conn.RemoteAddr().String())
+		s.ipListLock.Unlock()
+		if s.acceptHandleDeferFunc != nil {
+			s.acceptHandleDeferFunc(conn)
+		}
+	}()
 
 	for {
 		if s.acceptHandle != nil {
-			if err := s.acceptHandle(s.ctx, conn); err != nil {
+			if !s.acceptHandle(s.ctx, conn) {
 				return
 			}
 		}

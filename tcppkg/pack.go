@@ -2,47 +2,75 @@ package tcppkg
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 	"net"
+	"reflect"
 )
 
-var defaultHeaderLen int = 4
+var (
+	headLen          = 2
+	msgIDLen         = 2
+	defaultHeaderLen = 2
+)
 
 // Message structure for messages
 type Message struct {
+	HeadLen uint32
 	DataLen uint32 // Length of the message
 	Data    []byte // Content of the message
 }
 
 // Pack 封包方法,压缩数据
-func Pack(msg []byte) []byte {
-	buffer := make([]byte, defaultHeaderLen+len(msg))
+func Pack(msgID uint16, msg []byte) []byte {
+	buffer := make([]byte, headLen+msgIDLen+defaultHeaderLen+len(msg))
+
+	// 将 buffer 前面2个字节设置为包头
+	buffer[0], buffer[1] = 0xaa, 0x55
+
+	// 将 buffer 2个字节设置为包长度，大端序 msg id
+	binary.LittleEndian.PutUint16(buffer[headLen:headLen+msgIDLen], msgID)
 
 	// 将 buffer 前面四个字节设置为包长度，大端序
-	binary.BigEndian.PutUint32(buffer[0:4], uint32(len(msg)))
-	copy(buffer[defaultHeaderLen:], msg)
+	binary.LittleEndian.PutUint16(buffer[headLen+msgIDLen:headLen+msgIDLen+defaultHeaderLen], uint16(len(msg)))
+
+	copy(buffer[headLen+msgIDLen+defaultHeaderLen:], msg)
 	return buffer
 }
 
 // Unpack 拆包方法,解压数据
-func Unpack(conn net.Conn) ([]byte, error) {
+func Unpack(conn net.Conn) (uint16, []byte, error) {
 	var (
-		msgLen uint32
-		header = make([]byte, defaultHeaderLen)
+		headHeader    = make([]byte, headLen)
+		msgHeader     = make([]byte, msgIDLen)
+		dataLenHeader = make([]byte, defaultHeaderLen)
 	)
-	if _, err := io.ReadFull(conn, header); err != nil {
-		return nil, err
+
+	if _, err := conn.Read(headHeader); err != nil {
+		return 0, nil, err
+	}
+	if !reflect.DeepEqual(headHeader, []byte{0xaa, 0x55}) {
+		return 0, nil, errors.New("head error")
 	}
 
-	msgLen = binary.BigEndian.Uint32(header) // 转换成 10 进制的数字
+	if _, err := io.ReadFull(conn, msgHeader); err != nil {
+		return 0, nil, err
+	}
+	msgID := binary.LittleEndian.Uint16(msgHeader) // 转换成 10 进制的数字
 
-	data := make([]byte, msgLen)
-	if msgLen > 0 {
+	if _, err := io.ReadFull(conn, dataLenHeader); err != nil {
+		return 0, nil, err
+	}
+	dataLen := binary.LittleEndian.Uint16(dataLenHeader) // 转换成 10 进制的数字
+
+	data := make([]byte, dataLen)
+	if dataLen > 0 {
 		_, e := io.ReadFull(conn, data) // 读取内容
 		if e != nil {
-			return nil, e
+			return 0, nil, e
 		}
 	}
 
-	return data, nil
+	// fmt.Println("------data", headHeader, msgHeader, dataLenHeader, data)
+	return msgID, data, nil
 }

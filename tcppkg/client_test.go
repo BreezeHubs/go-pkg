@@ -2,7 +2,6 @@ package tcppkg
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 	"testing"
@@ -17,8 +16,10 @@ func TestNewTcpClient(t *testing.T) {
 
 	go func() {
 		for {
-			bytes, err := ReadBytes(client.cli)
-			log.Println("read: ", bytes, err)
+			_, bytes, err := ReadBytes(client.cli)
+			if err == nil {
+				log.Println("接收数据：", string(bytes))
+			}
 			time.Sleep(1 * time.Second)
 		}
 	}()
@@ -26,8 +27,7 @@ func TestNewTcpClient(t *testing.T) {
 	var count int
 	for {
 		md := []byte("哈哈哈哈哈哈哈哈哈哈哈哈 " + strconv.Itoa(count))
-		fmt.Println("uint32(len(md))", len(md))
-		err = SendBytes(client.cli, md)
+		err = SendBytes(client.cli, 0, md)
 		if err != nil {
 			t.Log(err)
 		}

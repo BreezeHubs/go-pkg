@@ -11,4 +11,6 @@ type IRegister interface {
 	Close() error
 
 	HasLease() bool
+
+	IsClose() bool
 }

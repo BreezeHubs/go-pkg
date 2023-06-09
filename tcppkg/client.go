@@ -31,6 +31,10 @@ func NewTcpClient(ctx context.Context, ip string, port int) (*tcpClient, error) 
 	}, nil
 }
 
+func (c *tcpClient) GetConn() net.Conn {
+	return c.cli
+}
+
 func (c *tcpClient) Close() error {
 	return c.cli.Close()
 }

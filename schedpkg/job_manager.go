@@ -3,7 +3,7 @@ package schedpkg
 import (
 	"context"
 	"fmt"
-	"github.com/BreezeHubs/go-pkg/logpkg"
+	"github.com/BreezeHubs/go-pkg/logpkg/zaplogpkg"
 	"sync"
 )
 
@@ -52,7 +52,7 @@ func (jm *JobsManager) ListenAndRetry(ctx context.Context) error {
 			return ctx.Err()
 		default:
 			if err := jm.Sync(); err != nil {
-				logpkg.ZapLogError(&logpkg.LogMessage{Tag: "pkg.JobsManager.ListenAndRedo.Sync.error", Err: err})
+				zaplogpkg.Error("pkg.JobsManager.ListenAndRedo.Sync.error", "", err)
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func (jm *JobsManager) Sync() error {
 		go func(t IJob) {
 			defer wg.Done()
 			if err := t.Start(); err != nil {
-				logpkg.ZapLogError(&logpkg.LogMessage{Tag: "pkg.JobsManager.Sync.Start.error", Err: err})
+				zaplogpkg.Error("pkg.JobsManager.Sync.Start.error", "", err)
 			}
 		}(t)
 	}

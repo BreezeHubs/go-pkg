@@ -2,13 +2,10 @@ package etcdsvcdispkg
 
 import (
 	"context"
-	"fmt"
 	"github.com/BreezeHubs/go-pkg/svcdispkg"
 	"github.com/BreezeHubs/go-pkg/typexpkg"
 	"github.com/pkg/errors"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"math/rand"
-	"sync/atomic"
 )
 
 type SvcDisServer struct {
@@ -59,36 +56,6 @@ func (d *SvcDisServer) GetServiceAddr(serviceName string, f func(i int64) int64)
 	// 负载均衡算法
 	randIndex := f(int64(len(resp.Kvs)))
 	return typexpkg.BytesToString(resp.Kvs[randIndex].Value), nil
-}
-
-// RandLB 随机算法
-func RandLB(i int) int {
-	return rand.Intn(i) // [0, n)
-}
-
-var (
-	roundRobinLBIndex int64 = -1
-	roundRobinLBLen   int64
-)
-
-// RoundRobinLB 轮巡算法
-func RoundRobinLB(i int64) int64 {
-	if i <= 1 {
-		return 0
-	}
-
-	if roundRobinLBLen != i {
-		atomic.StoreInt64(&roundRobinLBLen, i)
-		atomic.StoreInt64(&roundRobinLBIndex, -1)
-	} else if roundRobinLBIndex > i*2 {
-		atomic.StoreInt64(&roundRobinLBIndex, -1)
-	}
-
-	atomic.AddInt64(&roundRobinLBIndex, 1)
-
-	a := roundRobinLBIndex % i
-	fmt.Println("A", a)
-	return a
 }
 
 func (d *SvcDisServer) WatchService(serviceName string) error {

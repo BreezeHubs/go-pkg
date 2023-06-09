@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -62,10 +63,16 @@ func LoadYamlFileWithTickerAndListen(file string, config any, t time.Duration, r
 	}()
 }
 
+var readConfigLock sync.Mutex
+
 func readConfig(config any) error {
 	if err := viper.ReadInConfig(); err != nil {
 		return errors.Wrap(err, "Fatal error config file")
 	}
+
+	readConfigLock.Lock()
+	defer readConfigLock.Unlock()
+
 	if err := viper.Unmarshal(&config); err != nil {
 		return errors.Wrap(err, "Unable to decode into struct")
 	}

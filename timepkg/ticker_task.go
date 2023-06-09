@@ -5,31 +5,6 @@ import (
 	"time"
 )
 
-func TickerTaskV1(ctx context.Context, taskFunc func(ctx context.Context) error, t time.Duration) (err error) {
-	ticker := time.NewTicker(t)
-	defer ticker.Stop()
-
-	if taskErr := taskFunc(ctx); taskErr != nil {
-		err = taskErr
-		return
-	}
-
-	done := false
-	for !done {
-		select {
-		case <-ctx.Done():
-			done = true
-			err = ctx.Err()
-		case <-ticker.C:
-			if taskErr := taskFunc(ctx); taskErr != nil {
-				done = true
-				err = taskErr
-			}
-		}
-	}
-	return
-}
-
 func TickerTask(ctx context.Context, taskFunc func(ctx context.Context) error, t time.Duration) error {
 	if err := taskFunc(ctx); err != nil {
 		return err
@@ -56,11 +31,11 @@ func TickerTaskWithChannel(ctx context.Context, taskFunc func(ctx context.Contex
 		C: make(chan error, 1),
 	}
 
-	go func() {
-		if err := taskFunc(ctx); err != nil {
-			tc.C <- err
-		}
+	if err := taskFunc(ctx); err != nil {
+		tc.C <- err
+	}
 
+	go func() {
 		for {
 			select {
 			case <-ctx.Done():

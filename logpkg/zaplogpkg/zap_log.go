@@ -1,4 +1,4 @@
-package logpkg
+package zaplogpkg
 
 import (
 	"errors"
@@ -13,14 +13,34 @@ import (
 var zapLogger *zap.Logger
 var zapOnce sync.Once
 
-func ZapLogInit(logFile string) {
+type LogConfig struct {
+	File       string
+	MaxSize    int  // MB
+	MaxBackups int  // 保留旧文件的最大个数
+	MaxAge     int  // days
+	Compress   bool // 是否压缩 / 归档旧文件
+}
+
+func LogInit(config *LogConfig) {
 	zapOnce.Do(func() {
 		hook := lumberjack.Logger{
-			Filename:   logFile,
-			MaxSize:    10, // 10MB
-			MaxBackups: 10,
-			MaxAge:     7, // 7 days
-			Compress:   true,
+			Filename:   "./log",
+			MaxSize:    10,
+			MaxBackups: 5,
+			MaxAge:     7,
+			Compress:   config.Compress,
+		}
+		if len(config.File) > 0 {
+			hook.Filename = config.File
+		}
+		if config.MaxSize > 0 {
+			hook.MaxSize = config.MaxSize
+		}
+		if config.MaxBackups > 0 {
+			hook.MaxBackups = config.MaxBackups
+		}
+		if config.MaxAge > 0 {
+			hook.MaxAge = config.MaxAge
 		}
 
 		encoderConfig := zap.NewProductionEncoderConfig()
@@ -50,78 +70,60 @@ func ZapLogInit(logFile string) {
 	})
 }
 
-func ZapLogInfo(lm *LogMessage) error {
+func Info(tag, msg string, err error) error {
 	if zapLogger == nil {
 		return errors.New("log 未初始化")
 	}
 
-	zapLogger.Info(lm.Msg,
-		zap.String("tag", lm.Tag),
-		zap.Error(lm.Err),
-	)
+	zapLogger.Info("["+tag+"] "+msg, zap.Error(err))
 	return nil
 }
 
-func ZapLogError(lm *LogMessage) error {
+func Error(tag, msg string, err error) error {
 	if zapLogger == nil {
 		return errors.New("log 未初始化")
 	}
 
-	zapLogger.Error(lm.Msg,
-		zap.String("tag", lm.Tag),
-		zap.Error(lm.Err),
-	)
+	zapLogger.Error("["+tag+"] "+msg, zap.Error(err))
 	return nil
 }
 
-func ZapLogFatal(lm *LogMessage) error {
+func Fatal(tag, msg string, err error) error {
 	if zapLogger == nil {
 		return errors.New("log 未初始化")
 	}
 
-	zapLogger.Fatal(lm.Msg,
-		zap.String("tag", lm.Tag),
-		zap.Error(lm.Err),
-	)
+	zapLogger.Fatal("["+tag+"] "+msg, zap.Error(err))
 	return nil
 }
 
-func ZapLogDebug(lm *LogMessage) error {
+func Debug(tag, msg string, err error) error {
 	if zapLogger == nil {
 		return errors.New("log 未初始化")
 	}
 
-	zapLogger.Debug(lm.Msg,
-		zap.String("tag", lm.Tag),
-		zap.Error(lm.Err),
-	)
+	zapLogger.Debug("["+tag+"] "+msg, zap.Error(err))
 	return nil
 }
 
-func ZapLogWarn(lm *LogMessage) error {
+func Warn(tag, msg string, err error) error {
 	if zapLogger == nil {
 		return errors.New("log 未初始化")
 	}
 
-	zapLogger.Warn(lm.Msg,
-		zap.String("tag", lm.Tag),
-		zap.Error(lm.Err),
-	)
+	zapLogger.Warn("["+tag+"] "+msg, zap.Error(err))
 	return nil
 }
 
-func ZapLogPanic(lm *LogMessage) error {
+func Panic(tag, msg string, err error) error {
 	if zapLogger == nil {
 		return errors.New("log 未初始化")
 	}
 
-	zapLogger.Panic(lm.Msg,
-		zap.String("tag", lm.Tag),
-		zap.Error(lm.Err),
-	)
+	zapLogger.Panic("["+tag+"] "+msg, zap.Error(err))
 	return nil
 }
 
-func ZapLogSync() error {
+func LogSync() error {
 	return zapLogger.Sync()
 }

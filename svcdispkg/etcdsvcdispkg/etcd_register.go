@@ -17,9 +17,12 @@ type SvcDisClient struct {
 
 	leaseTTL time.Duration // 健康监测间隔时间，单位s
 
-	ctx context.Context
+	ctx        context.Context
+	cancelFunc context.CancelFunc
 
 	lock sync.Mutex
+
+	conf *EtcdSvcDisConfig // 配置
 }
 
 const leaseTTL = 5
@@ -44,16 +47,27 @@ func NewSvcDisClient(ctx context.Context, conf *EtcdSvcDisConfig) (svcdispkg.IRe
 		return nil, err
 	}
 
-	c, _ := context.WithTimeout(conf.Context, time.Second)
+	c, _ := context.WithTimeout(conf.Context, conf.DialTimeout)
 	if _, err = cli.Put(c, "svcDisClient-test-key", "1"); err != nil {
 		return nil, err
 	}
 
+	ctx, cancelFunc := context.WithCancel(context.TODO())
 	return &SvcDisClient{
-		cli:      cli,
-		leaseTTL: leaseTTL,
-		ctx:      ctx,
+		cli:        cli,
+		leaseTTL:   leaseTTL,
+		ctx:        ctx,
+		cancelFunc: cancelFunc,
+		conf:       conf,
 	}, nil
+}
+
+func (r *SvcDisClient) IsClose() bool {
+	c, _ := context.WithTimeout(r.ctx, r.conf.DialTimeout)
+	if _, err := r.cli.Get(c, "svcDisClient-test-key"); err != nil {
+		return true
+	}
+	return false
 }
 
 // Register 注册服务
@@ -112,6 +126,8 @@ func (r *SvcDisClient) Close() error {
 	if err := r.cli.Close(); err != nil {
 		return errors.Wrap(err, "关闭etcd连接失败")
 	}
+	r.cancelFunc()
+	r.leaseID = 0
 	return nil
 }
 
