@@ -2,15 +2,19 @@ package tcppkg
 
 import (
 	"net"
-	"time"
 )
 
+func (s *tcpServer) handleConn(conn net.Conn) {
+	s.ipListConn(conn) // 维护IP列表、处理首次连接钩子
+	s.connHandle(conn)
+}
+
+// 保存 ip 到 list，并执行首次连接的钩子
 func (s *tcpServer) ipListConn(conn net.Conn) {
 	s.ipListLock.Lock()
 	defer s.ipListLock.Unlock()
 
-	_, ok := s.ipList[conn.RemoteAddr().String()]
-	if !ok {
+	if _, ok := s.ipList[conn.RemoteAddr().String()]; !ok {
 		s.ipList[conn.RemoteAddr().String()] = struct{}{}
 
 		if s.hookHandle != nil {
@@ -19,6 +23,14 @@ func (s *tcpServer) ipListConn(conn net.Conn) {
 	}
 }
 
+type ConnHandleResult int
+
+const (
+	ConnContinue ConnHandleResult = iota
+	ConnStop
+)
+
+// 监听 conn
 func (s *tcpServer) connHandle(conn net.Conn) {
 	defer func() {
 		conn.Close()
@@ -32,10 +44,14 @@ func (s *tcpServer) connHandle(conn net.Conn) {
 
 	for {
 		if s.acceptHandle != nil {
-			if !s.acceptHandle(s.ctx, conn) {
+			result := s.acceptHandle(s.ctx, conn)
+			switch result {
+			case ConnContinue:
+				continue
+			case ConnStop:
 				return
+			default:
 			}
 		}
-		time.Sleep(200 * time.Microsecond)
 	}
 }

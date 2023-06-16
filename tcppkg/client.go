@@ -3,8 +3,8 @@ package tcppkg
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
+	"time"
 )
 
 type tcpClient struct {
@@ -16,12 +16,16 @@ type tcpClient struct {
 	ctx context.Context
 }
 
-func NewTcpClient(ctx context.Context, ip string, port int) (*tcpClient, error) {
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, port))
+func NewTcpClient(ctx context.Context, ip string, port int, t ...time.Duration) (*tcpClient, error) {
+	timeout := 3 * time.Second
+	if len(t) > 0 {
+		timeout = t[0]
+	}
+
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), timeout)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("[IP:" + conn.RemoteAddr().String() + "] 连接成功")
 
 	return &tcpClient{
 		ip:   ip,

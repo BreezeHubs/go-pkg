@@ -2,19 +2,31 @@ package main
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"github.com/BreezeHubs/go-pkg/tcppkg"
 	"log"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
+//replace github.com/BreezeHubs/go-pkg => ../go-pkg
+
 func main() {
-	ml := make([]byte, 2)
-	binary.LittleEndian.PutUint16(ml[0:2], uint16(1))
-	fmt.Println("-----------uint16(len(msg)", ml)
+	//ml := make([]byte, 2)
+	//binary.LittleEndian.PutUint16(ml[0:2], uint16(1))
+	//fmt.Println("-----------uint16(len(msg)", ml)
+
+	//the15DayList := timepkg.GetDayListByNow(1, false)
+	//fmt.Println(the15DayList)
+
+	//the1YearList := timepkg.GetMonthListByNow(6, true)
+	//fmt.Println(the1YearList)
+
+	s := "ad/1w/122132/fsws/wqd"
+	n := strings.SplitN(s, "/", 2)
+	fmt.Println(n)
 
 	os.Exit(0)
 

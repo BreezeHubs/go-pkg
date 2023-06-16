@@ -9,7 +9,7 @@ import (
 
 type (
 	TcpServerOption        func(s *tcpServer)
-	HandleFuncWithContinue func(ctx context.Context, conn net.Conn) bool
+	HandleFuncWithContinue func(ctx context.Context, conn net.Conn) ConnHandleResult
 	HandleFunc             func(ctx context.Context, conn net.Conn)
 
 	tcpServer struct {
@@ -57,21 +57,15 @@ func (s *tcpServer) Start() error {
 	if err != nil {
 		return err
 	}
-	s.svr = listener
-	defer func() {
-		s.svr.Close()
-	}()
+	//s.svr = listener
+	defer listener.Close()
 
 	for {
-		conn, err := s.svr.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			continue
 		}
-
-		go func() {
-			s.ipListConn(conn) // 维护IP列表、处理首次连接钩子
-			s.connHandle(conn)
-		}()
+		go s.handleConn(conn)
 	}
 	return nil
 }

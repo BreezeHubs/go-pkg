@@ -29,6 +29,15 @@ func (s *syncMap[K, T]) Load(key K) (T, bool) {
 	return load.(T), ok
 }
 
+func (s *syncMap[K, T]) ExistAndUpdate(key K, f func(value *T)) bool {
+	load, ok := s.Load(key)
+	if ok {
+		f(&load)
+	}
+	s.Store(key, load)
+	return ok
+}
+
 func (s *syncMap[K, T]) LoadOrStore(key K, value T) (T, bool) {
 	store, ok := s.m.LoadOrStore(key, value)
 	if !ok || store == nil {
